@@ -1,28 +1,24 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// تنظیمات دیتابیس
+// دیتابیس
 const DB_FILE = 'hacker_db.sqlite';
 const db = new sqlite3.Database(DB_FILE);
 
-// ساخت جدول
 db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
 });
 
-app.use(express.text()); // برای دریافت متن لاگ
-app.use(express.json()); // برای JSON
+app.use(express.text()); 
+app.use(express.json()); 
 
-// 1. صفحه اصلی (مخفی)
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-// 2. دریافت داده (Log)
 app.post('/log', (req, res) => {
     const data = req.body;
     db.run("INSERT INTO logs (data) VALUES (?)", [data], function(err) {
@@ -31,7 +27,6 @@ app.post('/log', (req, res) => {
     });
 });
 
-// 3. پنل ادمین (Admin Panel)
 app.get('/admin', (req, res) => {
     db.all("SELECT * FROM logs ORDER BY id DESC", [], (err, rows) => {
         if (err) return res.send("Database Error");
@@ -51,16 +46,6 @@ app.get('/admin', (req, res) => {
         html += "</table></body></html>";
         res.send(html);
     });
-});
-
-// 4. سرو کردن فایل‌های مخرب (Fake Payloads)
-// فرض بر این است که فایل‌های زیر را در پوشه پروژه داشته باشی
-app.get('/download/exe', (req, res) => {
-    // اگر فایل وجود ندارد، یک فایل متنی ساده می‌سازد تا تست شود
-    const fakeExe = "FAKE_WINDOWS_UPDATE"; 
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename="update.exe"');
-    res.send(fakeExe);
 });
 
 app.listen(PORT, () => {
